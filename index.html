@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест Анимации и 3D</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222; /* Темный фон для проверки прозрачности */
+            display: flex;
+            flex-direction: column; /* Выстраиваем элементы вертикально (друг под другом) */
+            justify-content: center; /* Центрируем по вертикали */
+            align-items: center;    /* Центрируем по горизонтали */
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Настройки для GIF-анимации с текстом */
+        .text-gif {
+            width: 400vw;            /* Адаптивная ширина под экран */
+            max-width: 1000px;       /* Максимальная ширина гифки */
+            height: auto;
+            margin-bottom: 20px;    /* Отступ снизу, чтобы не прилипала к видео */
+        }
+
+        /* Настройки для 3D-видео */
+        video {
+            width: 80vw;            /* Занимает 80% ширины экрана */
+            max-width: 500px;       /* Максимальный размер модели */
+            height: auto;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Текстовая GIF-анимация наверху -->
+    <img src="textanim.gif" alt="Текстовая анимация" class="text-gif">
+
+    <!-- 2. Ваше WebM видео с моделью внизу -->
+    <!-- ВАЖНО: Убедитесь, что имя файла "animation.webm" совпадает с вашим! -->
+    <video autoplay loop muted playsinline>
+        <source src="animation.webm" type="video/webm">
+        Ваш browser не поддерживает видео.
+    </video>
+
+</body>
+</html>
