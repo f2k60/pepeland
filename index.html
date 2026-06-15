@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><meta name="GCD" content="YTk3ODQ3ZWZhN2I4NzZmMzBkNTEwYjJl4b782f86b03a2458a25d634af19946b9"/>
+<html><head><meta name="GCD" content="YTk3ODQ3ZWZhN2I4NzZmMzBkNTEwYjJl10d5f61704005159ff609502a915b4ac"/>
   <meta charset="utf-8">
   <title>Зона Берёзовых Домов</title>
   <meta name="generator" content="Google Web Designer 16.4.1.0219">
@@ -486,16 +486,22 @@ body * {
       // GWD Predefined Function
       gwd.actions.timeline.gotoAndPlay('document.body', 'start');
     };
+    gwd.auto_BodyEvent_11 = function(event) {
+      // GWD Predefined Function
+      gwd.actions.timeline.gotoAndPlay('document.body', 'start');
+    };
   </script>
   <script type="text/javascript" gwd-events="registration">
     // Код для обработки событий в Google Web Designer
     // Этот блок скрипта создается автоматически, не изменяйте его.
     gwd.actions.events.registerEventHandlers = function(event) {
       gwd.actions.events.addHandler('document.body', 'event-1', gwd.auto_BodyEvent_1, false);
+      gwd.actions.events.addHandler('document.body', 'event-1', gwd.auto_BodyEvent_11, false);
       gwd.actions.timeline.captureAnimationEnd(document.body);
     };
     gwd.actions.events.deregisterEventHandlers = function(event) {
       gwd.actions.events.removeHandler('document.body', 'event-1', gwd.auto_BodyEvent_1, false);
+      gwd.actions.events.removeHandler('document.body', 'event-1', gwd.auto_BodyEvent_11, false);
       gwd.actions.timeline.releaseAnimationEnd(document.body);
     };
     document.addEventListener("DOMContentLoaded", gwd.actions.events.registerEventHandlers);
