@@ -239,8 +239,10 @@ function sendRecord(name, score) {
 }
 
 // Загрузка ТОП игроков из Google Таблицы
+// Загрузка ТОП игроков из Google Таблицы
 function loadLeaderboard() {
-   const url = "https://google.com" + GOOGLE_SHEET_ID + "/gviz/tq?tqx=out:json&gid=0";
+    // Исправили базовый адрес на полный путь к таблицам Google
+    const url = "https://google.com" + GOOGLE_SHEET_ID + "/gviz/tq?tqx=out:json&gid=0";
     
     fetch(url)
     .then(res => res.text())
@@ -251,11 +253,17 @@ function loadLeaderboard() {
         
         let players = [];
         rows.forEach(row => {
-            if(row.c && row.c[0] && row.c[1]) { 
-                players.push({
-                    name: row.c[0].v,
-                    score: parseInt(row.c[1].v)
-                });
+            // Более надежная проверка существования данных в ячейках А и Б
+            if (row && row.c && row.c[0] && row.c[1]) { 
+                const nameVal = row.c[0].v;
+                const scoreVal = row.c[1].v;
+                
+                if (nameVal !== null && scoreVal !== null) {
+                    players.push({
+                        name: nameVal.toString(),
+                        score: parseInt(scoreVal) || 0
+                    });
+                }
             }
         });
 
@@ -265,14 +273,20 @@ function loadLeaderboard() {
         // Отрисовка ТОП-10 на экран
         const listHtml = document.getElementById('leader-list');
         listHtml.innerHTML = "";
-        players.slice(0, 10).forEach(p => {
-            listHtml.innerHTML += `<li>${p.name} <span class="score-val">${p.score}</span></li>`;
-        });
+        
+        if (players.length === 0) {
+            listHtml.innerHTML = "<li>Таблица пуста</li>";
+        } else {
+            players.slice(0, 10).forEach(p => {
+                listHtml.innerHTML += `<li>${p.name} <span class="score-val">${p.score}</span></li>`;
+            });
+        }
     }).catch(err => {
         document.getElementById('leader-list').innerHTML = "<li>Ошибка загрузки топа</li>";
         console.error(err);
     });
 }
+
 </script>
 
 </body>
