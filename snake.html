@@ -2,6 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <title>ЗБД Змейка</title>
   <style>
     /* Убираем все отступы и делаем фон прозрачным */
     html, body {
@@ -11,16 +12,41 @@
       background: transparent; 
       font-family: 'Courier New', Courier, monospace;
     }
-    /* Стили игрового поля в ретро-стиле 2000-х */
-    #game-container {
+    /* Общий макет: игра слева, таблица лидеров справа */
+    #main-layout {
+      display: flex;
+      gap: 20px;
+      background: rgba(0, 0, 0, 0.85); /* Полупрозрачный черный блок под стиль 2000-х */
+      border: 4px double #00ff00; /* Олдскульная двойная зеленая рамка */
+      padding: 15px;
+      width: 650px; /* Фиксированная ширина под две колонки */
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+    /* Левая сторона (Игровой процесс) */
+    #game-side {
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: rgba(0, 0, 0, 0.85); /* Полупрозрачный черный блок */
-      border: 4px double #00ff00; /* Олдскульная двойная зеленая рамка */
-      padding: 10px;
-      width: 400px;
-      border-radius: 8px;
+    }
+    /* Поле ввода имени на 3 символа */
+    #player-name-display {
+      color: #00ff00;
+      font-size: 14px;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+    #nickname-input {
+      background: #111;
+      border: 2px solid #00ff00;
+      color: #00ff00;
+      font-family: monospace;
+      font-size: 16px;
+      width: 50px;
+      text-align: center;
+      text-transform: uppercase;
+      margin-left: 5px;
+      outline: none;
     }
     #score {
       color: #00ff00;
@@ -32,20 +58,69 @@
       background: #111;
       border: 2px solid #00ff00;
     }
+    /* Правая сторона (Таблица лидеров) */
+    #leaderboard-side {
+      flex: 1;
+      color: #00ff00;
+      border-left: 2px dashed #00ff00;
+      padding-left: 15px;
+    }
+    h3 {
+      margin-top: 0;
+      text-shadow: 0 0 5px #00ff00;
+      text-align: center;
+    }
+    ol {
+      padding-left: 25px;
+      margin: 0;
+    }
+    li {
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .score-val {
+      float: right;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
-<div id="game-container">
-  <div id="score">SCORE: 0</div>
-  <canvas id="gc" width="400" height="400"></canvas>
+<div id="main-layout">
+  <!-- Левая колонка: Игра -->
+  <div id="game-side">
+    <div id="player-name-display">
+      <label for="nickname-input">ENTER NAME (3 CHARS):</label>
+      <input type="text" id="nickname-input" maxlength="3" placeholder="AAA">
+    </div>
+    <div id="score">SCORE: 0</div>
+    <canvas id="gc" width="400" height="400"></canvas>
+  </div>
+  
+  <!-- Правая колонка: Таблица лидеров -->
+  <div id="leaderboard-side">
+    <h3>TOP PLAYERS</h3>
+    <ol id="leader-list">
+      <li>Загрузка...</li>
+    </ol>
+  </div>
 </div>
 
 <script>
-// Настройки игры
+// --- НАСТРОЙКА GOOGLE (ВСТАВЬТЕ СВОИ ДАННЫЕ СЮДА) ---
+const GOOGLE_FORM_URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLScBkRdQ3YUohrALZ4v2jxinPSn6vSTCYtJechM__vKqNTFPpQ/formResponse";
+const NAME_ENTRY_ID = "entry.918646997";  // ID поля имени в форме
+const SCORE_ENTRY_ID = "entry.60603237"; // ID поля очков в форме
+const GOOGLE_SHEET_ID = "1wzQiiNNLBzWed-kiHJYOiuVtFSL07m3ST9fkvCY4wRk";
+// ----------------------------------------------------
+
 const canvas = document.getElementById('gc');
 const ctx = canvas.getContext('2d');
 const scoreDiv = document.getElementById('score');
+const nameInput = document.getElementById('nickname-input');
+
+// Автофокус на поле ввода при загрузке страницы
+nameInput.focus();
 
 let posX = posY = 10; // Стартовая позиция змейки
 let gridSize = tileCount = 20; // Размер сетки
@@ -54,12 +129,16 @@ let xv = yv = 0; // Скорость движения
 let trail = [];
 let tail = 5;
 let score = 0;
+let isGameOver = false;
 
 // Запуск игрового цикла (15 кадров в секунду)
 setInterval(game, 1000 / 15);
 document.addEventListener("keydown", keyPush);
+loadLeaderboard(); // Загрузка топа игроков при старте
 
 function game() {
+    if (isGameOver) return;
+
     posX += xv;
     posY += yv;
     
@@ -79,10 +158,8 @@ function game() {
         ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize - 2, gridSize - 2);
         // Проверка на врезание в свой хвост
         if (trail[i].x === posX && trail[i].y === posY) {
-            if (xv !== 0 || yv !== 0) { // Сброс только если игра уже началась
-                tail = 5;
-                score = 0;
-                scoreDiv.innerText = "SCORE: " + score;
+            if (xv !== 0 || yv !== 0) { 
+                gameOver();
             }
         }
     }
@@ -106,16 +183,96 @@ function game() {
     ctx.fillRect(appleX * gridSize, appleY * gridSize, gridSize - 2, gridSize - 2);
 }
 
-// Управление клавиатурой
+function gameOver() {
+    isGameOver = true;
+    xv = yv = 0;
+    
+    // Получаем имя из поля. Если пусто — пишем ZBD
+    let finalName = nameInput.value.trim().toUpperCase();
+    if (finalName.length === 0) finalName = "ZBD";
+    
+    alert("Игра окончена! Ваш счет: " + score + ". Отправляем рекорд...");
+    sendRecord(finalName, score);
+}
+
+// Управление клавиатурой (Строго WASD / ЦФЫВ)
 function keyPush(evt) {
+    // Если игрок в этот момент печатает буквы, WASD не должны двигать змейку
+    if (document.activeElement === nameInput && evt.keyCode !== 13) {
+        return; 
+    }
+
+    // Защита от скролла: блокируем прокрутку страницы для Пробела (32), S (83) и ВСЕХ стрелок (37-40)
+    if ([32, 83, 37, 38, 39, 40].includes(evt.keyCode)) {
+        evt.preventDefault();
+    }
+
+    if (isGameOver && evt.keyCode === 32) { // Рестарт на ПРОБЕЛ
+        posX = posY = 10; tail = 5; score = 0; isGameOver = false;
+        scoreDiv.innerText = "SCORE: 0";
+        nameInput.focus();
+        return;
+    }
+
     switch (evt.keyCode) {
-        case 65: if (xv !== 1)  { xv = -1; yv = 0;  } break; // A (Ф) - Влево
-        case 87: if (yv !== 1)  { xv = 0;  yv = -1; } break; // W (Ц) - Вверх
-        case 68: if (xv !== -1) { xv = 1;  yv = 0;  } break; // D (В) - Вправо
-        case 83: if (yv !== -1) { xv = 0;  yv = 1;  } break; // S (Ы) - Вниз
+        case 65: if (xv !== 1)  { xv = -1; yv = 0;  nameInput.blur(); } break; // A - Влево
+        case 87: if (yv !== 1)  { xv = 0;  yv = -1; nameInput.blur(); } break; // W - Вверх
+        case 68: if (xv !== -1) { xv = 1;  yv = 0;  nameInput.blur(); } break; // D - Вправо
+        case 83: if (yv !== -1) { xv = 0;  yv = 1;  nameInput.blur(); } break; // S - Вниз
     }
 }
 
+// Отправка рекорда в Google Форму
+function sendRecord(name, score) {
+    const formData = new FormData();
+    formData.append(NAME_ENTRY_ID, name);
+    formData.append(SCORE_ENTRY_ID, score);
+
+    fetch(GOOGLE_FORM_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: formData
+    }).then(() => {
+        setTimeout(loadLeaderboard, 1500); // Обновляем таблицу рекордов через 1.5 секунды
+        alert("Рекорд сохранен! Нажмите ПРОБЕЛ, чтобы играть снова.");
+    }).catch(err => console.error("Ошибка отправки:", err));
+}
+
+// Загрузка ТОП игроков из Google Таблицы
+function loadLeaderboard() {
+    const url = `https://google.com{GOOGLE_SHEET_ID}/gviz/tq?tqx=out:json`;
+    
+    fetch(url)
+    .then(res => res.text())
+    .then(data => {
+        // Очищаем ответ Google от лишнего текста, преобразуя в чистый JSON
+        const json = JSON.parse(data.substring(47, data.length - 2));
+        const rows = json.table.rows;
+        
+        let players = [];
+        rows.forEach(row => {
+            if(row.c && row.c[0] && row.c[1]) { 
+                players.push({
+                    name: row.c[0].v,
+                    score: parseInt(row.c[1].v)
+                });
+            }
+        });
+
+        // Сортировка по очкам от большего к меньшему
+        players.sort((a, b) => b.score - a.score);
+
+        // Отрисовка ТОП-10 на экран
+        const listHtml = document.getElementById('leader-list');
+        listHtml.innerHTML = "";
+        players.slice(0, 10).forEach(p => {
+            listHtml.innerHTML += `<li>${p.name} <span class="score-val">${p.score}</span></li>`;
+        });
+    }).catch(err => {
+        document.getElementById('leader-list').innerHTML = "<li>Ошибка загрузки топа</li>";
+        console.error(err);
+    });
+}
 </script>
 
 </body>
