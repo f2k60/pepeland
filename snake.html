@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    /* Убираем все отступы и делаем фон прозрачным */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: transparent; 
+      font-family: 'Courier New', Courier, monospace;
+    }
+    /* Стили игрового поля в ретро-стиле 2000-х */
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.85); /* Полупрозрачный черный блок */
+      border: 4px double #00ff00; /* Олдскульная двойная зеленая рамка */
+      padding: 10px;
+      width: 400px;
+      border-radius: 8px;
+    }
+    #score {
+      color: #00ff00;
+      font-size: 20px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 5px #00ff00;
+    }
+    canvas {
+      background: #111;
+      border: 2px solid #00ff00;
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <div id="score">SCORE: 0</div>
+  <canvas id="gc" width="400" height="400"></canvas>
+</div>
+
+<script>
+// Настройки игры
+const canvas = document.getElementById('gc');
+const ctx = canvas.getContext('2d');
+const scoreDiv = document.getElementById('score');
+
+let posX = posY = 10; // Стартовая позиция змейки
+let gridSize = tileCount = 20; // Размер сетки
+let appleX = appleY = 15; // Стартовая позиция яблока
+let xv = yv = 0; // Скорость движения
+let trail = [];
+let tail = 5;
+let score = 0;
+
+// Запуск игрового цикла (15 кадров в секунду)
+setInterval(game, 1000 / 15);
+document.addEventListener("keydown", keyPush);
+
+function game() {
+    posX += xv;
+    posY += yv;
+    
+    // Телепортация через границы экрана
+    if (posX < 0) posX = tileCount - 1;
+    if (posX > tileCount - 1) posX = 0;
+    if (posY < 0) posY = tileCount - 1;
+    if (posY > tileCount - 1) posY = 0;
+
+    // Очистка экрана
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Рисуем змейку (зеленая)
+    ctx.fillStyle = "#00ff00";
+    for (let i = 0; i < trail.length; i++) {
+        ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize - 2, gridSize - 2);
+        // Проверка на врезание в свой хвост
+        if (trail[i].x === posX && trail[i].y === posY) {
+            if (xv !== 0 || yv !== 0) { // Сброс только если игра уже началась
+                tail = 5;
+                score = 0;
+                scoreDiv.innerText = "SCORE: " + score;
+            }
+        }
+    }
+
+    trail.push({ x: posX, y: posY });
+    while (trail.length > tail) {
+        trail.shift();
+    }
+
+    // Если съели яблоко
+    if (appleX === posX && appleY === posY) {
+        tail++;
+        score += 10;
+        scoreDiv.innerText = "SCORE: " + score;
+        appleX = Math.floor(Math.random() * tileCount);
+        appleY = Math.floor(Math.random() * tileCount);
+    }
+
+    // Рисуем яблоко (красное)
+    ctx.fillStyle = "#ff0000";
+    ctx.fillRect(appleX * gridSize, appleY * gridSize, gridSize - 2, gridSize - 2);
+}
+
+// Управление клавиатурой
+function keyPush(evt) {
+    switch (evt.keyCode) {
+        case 65: if (xv !== 1)  { xv = -1; yv = 0;  } break; // A (Ф) - Влево
+        case 87: if (yv !== 1)  { xv = 0;  yv = -1; } break; // W (Ц) - Вверх
+        case 68: if (xv !== -1) { xv = 1;  yv = 0;  } break; // D (В) - Вправо
+        case 83: if (yv !== -1) { xv = 0;  yv = 1;  } break; // S (Ы) - Вниз
+    }
+}
+
+</script>
+
+</body>
+</html>
