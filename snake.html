@@ -240,8 +240,11 @@ function sendRecord(name, score) {
 
 // Загрузка ТОП игроков из Google Таблицы
 function loadLeaderboard() {
-    // ИСПРАВЛЕНО: Теперь адрес Google Таблиц указан полностью и правильно!
-    const url = "https://google.com" + GOOGLE_SHEET_ID + "/gviz/tq?tqx=out:json&gid=0";
+    // Вставили ваш точный номер листа с ответами формы
+    const gidNumber = "1946799392"; 
+    
+    // Собираем правильную прямую ссылку на нужный лист
+    const url = "https://google.com" + gidNumber;
     
     fetch(url)
     .then(res => res.text())
@@ -252,11 +255,10 @@ function loadLeaderboard() {
         
         let players = [];
         rows.forEach(row => {
-            // ИСПРАВЛЕНО: Безопасное чтение ячеек, так как Google Sheets может возвращать пустые колонки времени
+            // Проверяем, что в строке есть данные и их хватает (минимум 3 колонки: время, имя, очки)
             if (row && row.c && row.c.length >= 3) { 
-                // В таблицах от Гугл Форм: [0] - это Время, [1] - это Имя (Name), [2] - это Очки (Score)
-                const nameCell = row.c[1];
-                const scoreCell = row.c[2];
+                const nameCell = row.c[1];  // Колонка B (Имя)
+                const scoreCell = row.c[2]; // Колонка C (Очки)
                 
                 if (nameCell && scoreCell && nameCell.v !== null && scoreCell.v !== null) {
                     players.push({
@@ -286,7 +288,6 @@ function loadLeaderboard() {
         console.error(err);
     });
 }
-
 
 </script>
 
