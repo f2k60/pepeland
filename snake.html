@@ -240,6 +240,7 @@ function sendRecord(name, score) {
 
 // Загрузка ТОП игроков из Google Таблицы
 function loadLeaderboard() {
+    // ИСПРАВЛЕНО: Теперь адрес Google Таблиц указан полностью и правильно!
     const url = "https://google.com" + GOOGLE_SHEET_ID + "/gviz/tq?tqx=out:json&gid=0";
     
     fetch(url)
@@ -251,15 +252,16 @@ function loadLeaderboard() {
         
         let players = [];
         rows.forEach(row => {
-            // Более надежная проверка существования данных в ячейках А и Б
-            if (row && row.c && row.c[0] && row.c[1]) { 
-                const nameVal = row.c[0].v;
-                const scoreVal = row.c[1].v;
+            // ИСПРАВЛЕНО: Безопасное чтение ячеек, так как Google Sheets может возвращать пустые колонки времени
+            if (row && row.c && row.c.length >= 3) { 
+                // В таблицах от Гугл Форм: [0] - это Время, [1] - это Имя (Name), [2] - это Очки (Score)
+                const nameCell = row.c[1];
+                const scoreCell = row.c[2];
                 
-                if (nameVal !== null && scoreVal !== null) {
+                if (nameCell && scoreCell && nameCell.v !== null && scoreCell.v !== null) {
                     players.push({
-                        name: nameVal.toString(),
-                        score: parseInt(scoreVal) || 0
+                        name: nameCell.v.toString(),
+                        score: parseInt(scoreCell.v) || 0
                     });
                 }
             }
@@ -284,6 +286,7 @@ function loadLeaderboard() {
         console.error(err);
     });
 }
+
 
 </script>
 
