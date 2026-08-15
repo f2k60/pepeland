@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <title>ЗБД Змейка</title>
   <style>
-    /* Убираем все отступы и делаем фон прозрачным */
     html, body {
       margin: 0;
       padding: 0;
@@ -12,24 +11,21 @@
       background: transparent; 
       font-family: 'Courier New', Courier, monospace;
     }
-    /* Общий макет: игра слева, таблица лидеров справа */
     #main-layout {
       display: flex;
       gap: 20px;
-      background: rgba(0, 0, 0, 0.85); /* Полупрозрачный черный блок под стиль 2000-х */
-      border: 4px double #00ff00; /* Олдскульная двойная зеленая рамка */
+      background: rgba(0, 0, 0, 0.85);
+      border: 4px double #00ff00;
       padding: 15px;
-      width: 650px; /* Фиксированная ширина под две колонки */
+      width: 650px;
       border-radius: 8px;
       box-sizing: border-box;
     }
-    /* Левая сторона (Игровой процесс) */
     #game-side {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    /* Поле ввода имени на 3 символа */
     #player-name-display {
       color: #00ff00;
       font-size: 14px;
@@ -58,7 +54,6 @@
       background: #111;
       border: 2px solid #00ff00;
     }
-    /* Правая сторона (Таблица лидеров) */
     #leaderboard-side {
       flex: 1;
       color: #00ff00;
@@ -87,7 +82,6 @@
 <body>
 
 <div id="main-layout">
-  <!-- Левая колонка: Игра -->
   <div id="game-side">
     <div id="player-name-display">
       <label for="nickname-input">ENTER NAME (3 CHARS):</label>
@@ -97,7 +91,6 @@
     <canvas id="gc" width="400" height="400"></canvas>
   </div>
   
-  <!-- Правая колонка: Таблица лидеров -->
   <div id="leaderboard-side">
     <h3>TOP PLAYERS</h3>
     <ol id="leader-list">
@@ -109,10 +102,10 @@
 <script>
 // --- НАСТРОЙКА GOOGLE ---
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLScBkRdQ3YUohrALZ4v2jxinPSn6vSTCYtJechM__vKqNTFPpQ/formResponse";
-const NAME_ENTRY_ID = "entry.918646997";  // ID поля имени в форме
-const SCORE_ENTRY_ID = "entry.60603237"; // ID поля очков в форме
+const NAME_ENTRY_ID = "entry.918646997";
+const SCORE_ENTRY_ID = "entry.60603237";
 
-// !!! СЮДА ВСТАВЬТЕ URL ВАШЕГО ВЕБ-ПРИЛОЖЕНИЯ !!!
+// ВАШ URL ВЕБ-ПРИЛОЖЕНИЯ
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNYi7G8HwuaS8xmDpK2OzVT2lcVBzUa-icXbQokqDFo7uD3kjqvYFN2ech9n6DKEDgjw/exec";
 // ----------------------------------------------------
 
@@ -121,23 +114,20 @@ const ctx = canvas.getContext('2d');
 const scoreDiv = document.getElementById('score');
 const nameInput = document.getElementById('nickname-input');
 
-// Автофокус на поле ввода при загрузке страницы
 nameInput.focus();
 
-let posX = posY = 10; // Стартовая позиция змейки
-let gridSize = tileCount = 20; // Размер сетки
-let appleX = appleY = 15; // Стартовая позиция яблока
-let xv = yv = 0; // Скорость движения
+let posX = posY = 10;
+let gridSize = tileCount = 20;
+let appleX = appleY = 15;
+let xv = yv = 0;
 let trail = [];
 let tail = 5;
 let score = 0;
 let isGameOver = false;
 
-// Запуск игрового цикла (15 кадров в секунду)
 setInterval(game, 1000 / 15);
 document.addEventListener("keydown", keyPush);
 
-// ✅ ЗАГРУЖАЕМ ТАБЛИЦУ ТОЛЬКО ПРИ ЗАПУСКЕ
 console.log("Загрузка таблицы лидеров при запуске...");
 loadLeaderboard();
 
@@ -147,21 +137,17 @@ function game() {
     posX += xv;
     posY += yv;
     
-    // Телепортация через границы экрана
     if (posX < 0) posX = tileCount - 1;
     if (posX > tileCount - 1) posX = 0;
     if (posY < 0) posY = tileCount - 1;
     if (posY > tileCount - 1) posY = 0;
 
-    // Очистка экрана
     ctx.fillStyle = "#111";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Рисуем змейку (зеленая)
     ctx.fillStyle = "#00ff00";
     for (let i = 0; i < trail.length; i++) {
         ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize - 2, gridSize - 2);
-        // Проверка на врезание в свой хвост
         if (trail[i].x === posX && trail[i].y === posY) {
             if (xv !== 0 || yv !== 0) { 
                 gameOver();
@@ -174,7 +160,6 @@ function game() {
         trail.shift();
     }
 
-    // Если съели яблоко
     if (appleX === posX && appleY === posY) {
         tail++;
         score += 10;
@@ -183,7 +168,6 @@ function game() {
         appleY = Math.floor(Math.random() * tileCount);
     }
 
-    // Рисуем яблоко (красное)
     ctx.fillStyle = "#ff0000";
     ctx.fillRect(appleX * gridSize, appleY * gridSize, gridSize - 2, gridSize - 2);
 }
@@ -192,7 +176,6 @@ function gameOver() {
     isGameOver = true;
     xv = yv = 0;
     
-    // Получаем имя из поля. Если пусто — пишем ZBD
     let finalName = nameInput.value.trim().toUpperCase();
     if (finalName.length === 0) finalName = "ZBD";
     
@@ -200,19 +183,16 @@ function gameOver() {
     sendRecord(finalName, score);
 }
 
-// Управление клавиатурой (Строго WASD / ЦФЫВ)
 function keyPush(evt) {
-    // Если игрок в этот момент печатает буквы, WASD не должны двигать змейку
     if (document.activeElement === nameInput && evt.keyCode !== 13) {
         return; 
     }
 
-    // Защита от скролла: блокируем прокрутку страницы для Пробела (32), S (83) и ВСЕХ стрелок (37-40)
     if ([32, 83, 37, 38, 39, 40].includes(evt.keyCode)) {
         evt.preventDefault();
     }
 
-    if (isGameOver && evt.keyCode === 32) { // Рестарт на ПРОБЕЛ
+    if (isGameOver && evt.keyCode === 32) {
         posX = posY = 10; tail = 5; score = 0; isGameOver = false;
         scoreDiv.innerText = "SCORE: 0";
         nameInput.focus();
@@ -220,14 +200,13 @@ function keyPush(evt) {
     }
 
     switch (evt.keyCode) {
-        case 65: if (xv !== 1)  { xv = -1; yv = 0;  nameInput.blur(); } break; // A - Влево
-        case 87: if (yv !== 1)  { xv = 0;  yv = -1; nameInput.blur(); } break; // W - Вверх
-        case 68: if (xv !== -1) { xv = 1;  yv = 0;  nameInput.blur(); } break; // D - Вправо
-        case 83: if (yv !== -1) { xv = 0;  yv = 1;  nameInput.blur(); } break; // S - Вниз
+        case 65: if (xv !== 1)  { xv = -1; yv = 0;  nameInput.blur(); } break;
+        case 87: if (yv !== 1)  { xv = 0;  yv = -1; nameInput.blur(); } break;
+        case 68: if (xv !== -1) { xv = 1;  yv = 0;  nameInput.blur(); } break;
+        case 83: if (yv !== -1) { xv = 0;  yv = 1;  nameInput.blur(); } break;
     }
 }
 
-// Отправка рекорда в Google Форму
 function sendRecord(name, score) {
     const formData = new FormData();
     formData.append(NAME_ENTRY_ID, name);
@@ -239,13 +218,10 @@ function sendRecord(name, score) {
         body: formData
     }).then(() => {
         console.log("Рекорд отправлен в форму");
-        
-        // ✅ ОБНОВЛЯЕМ ТАБЛИЦУ ПОСЛЕ ОТПРАВКИ РЕКОРДА
         setTimeout(() => {
             console.log("Обновляем таблицу лидеров после отправки рекорда...");
             loadLeaderboard();
         }, 2000);
-        
         alert("Рекорд сохранен! Нажмите ПРОБЕЛ, чтобы играть снова.");
     }).catch(err => {
         console.error("Ошибка отправки:", err);
@@ -253,33 +229,17 @@ function sendRecord(name, score) {
     });
 }
 
-// ✅ ЗАГРУЗКА ТОП ИГРОКОВ (ТОЛЬКО ПО ВЫЗОВУ)
+// ✅ ЗАГРУЗКА С ИСПОЛЬЗОВАНИЕМ JSONP (обход CORS)
 function loadLeaderboard() {
-    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === "ВАШ_URL_ВЕБ_ПРИЛОЖЕНИЯ") {
-        document.getElementById('leader-list').innerHTML = "<li>⚠️ Настройте APPS_SCRIPT_URL</li>";
-        console.error("Пожалуйста, настройте APPS_SCRIPT_URL в коде");
-        return;
-    }
-
-    console.log("Загрузка данных из:", APPS_SCRIPT_URL);
+    const listHtml = document.getElementById('leader-list');
+    listHtml.innerHTML = "<li>⏳ Загрузка...</li>";
     
-    // Показываем индикатор загрузки
-    document.getElementById('leader-list').innerHTML = "<li>⏳ Обновление...</li>";
+    // Создаем уникальное имя для callback функции
+    const callbackName = 'jsonp_callback_' + Date.now();
     
-    fetch(APPS_SCRIPT_URL, {
-        method: 'GET',
-        mode: 'cors'
-    })
-    .then(response => {
-        console.log("Ответ получен, статус:", response.status);
-        if (!response.ok) {
-            throw new Error(`HTTP ошибка! статус: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log("Данные получены:", data);
-        const listHtml = document.getElementById('leader-list');
+    // Определяем функцию callback в глобальной области
+    window[callbackName] = function(data) {
+        console.log("Данные получены через JSONP:", data);
         listHtml.innerHTML = "";
         
         if (!data || data.length === 0) {
@@ -291,11 +251,28 @@ function loadLeaderboard() {
                 listHtml.innerHTML += `<li>${medal}${p.name} <span class="score-val">${p.score}</span></li>`;
             });
         }
-    })
-    .catch(err => {
-        console.error("Ошибка загрузки таблицы:", err);
-        document.getElementById('leader-list').innerHTML = `<li>❌ Ошибка: ${err.message}</li>`;
-    });
+        
+        // Удаляем callback после использования
+        delete window[callbackName];
+        // Удаляем скрипт
+        if (scriptElement) {
+            document.body.removeChild(scriptElement);
+        }
+    };
+    
+    // Создаем script элемент для JSONP запроса
+    const scriptElement = document.createElement('script');
+    scriptElement.src = APPS_SCRIPT_URL + '?callback=' + callbackName;
+    scriptElement.onerror = function() {
+        listHtml.innerHTML = "<li>❌ Ошибка загрузки</li>";
+        console.error("Ошибка загрузки JSONP");
+        delete window[callbackName];
+        if (scriptElement) {
+            document.body.removeChild(scriptElement);
+        }
+    };
+    
+    document.body.appendChild(scriptElement);
 }
 
 </script>
