@@ -107,11 +107,13 @@
 </div>
 
 <script>
-// --- НАСТРОЙКА GOOGLE (ВСТАВЬТЕ СВОИ ДАННЫЕ СЮДА) ---
+// --- НАСТРОЙКА GOOGLE ---
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/u/0/d/e/1FAIpQLScBkRdQ3YUohrALZ4v2jxinPSn6vSTCYtJechM__vKqNTFPpQ/formResponse";
 const NAME_ENTRY_ID = "entry.918646997";  // ID поля имени в форме
 const SCORE_ENTRY_ID = "entry.60603237"; // ID поля очков в форме
-const GOOGLE_SHEET_ID = "1wzQiiNNLBzWed-kiHJYOiuVtFSL07m3ST9fkvCY4wRk";
+
+// !!! СЮДА ВСТАВЬТЕ URL ВАШЕГО ВЕБ-ПРИЛОЖЕНИЯ !!!
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNYi7G8HwuaS8xmDpK2OzVT2lcVBzUa-icXbQokqDFo7uD3kjqvYFN2ech9n6DKEDgjw/exec";
 // ----------------------------------------------------
 
 const canvas = document.getElementById('gc');
@@ -134,7 +136,10 @@ let isGameOver = false;
 // Запуск игрового цикла (15 кадров в секунду)
 setInterval(game, 1000 / 15);
 document.addEventListener("keydown", keyPush);
-loadLeaderboard(); // Загрузка топа игроков при старте
+
+// ✅ ЗАГРУЖАЕМ ТАБЛИЦУ ТОЛЬКО ПРИ ЗАПУСКЕ
+console.log("Загрузка таблицы лидеров при запуске...");
+loadLeaderboard();
 
 function game() {
     if (isGameOver) return;
@@ -233,59 +238,63 @@ function sendRecord(name, score) {
         mode: 'no-cors',
         body: formData
     }).then(() => {
-        setTimeout(loadLeaderboard, 1500); // Обновляем таблицу рекордов через 1.5 секунды
+        console.log("Рекорд отправлен в форму");
+        
+        // ✅ ОБНОВЛЯЕМ ТАБЛИЦУ ПОСЛЕ ОТПРАВКИ РЕКОРДА
+        setTimeout(() => {
+            console.log("Обновляем таблицу лидеров после отправки рекорда...");
+            loadLeaderboard();
+        }, 2000);
+        
         alert("Рекорд сохранен! Нажмите ПРОБЕЛ, чтобы играть снова.");
-    }).catch(err => console.error("Ошибка отправки:", err));
+    }).catch(err => {
+        console.error("Ошибка отправки:", err);
+        alert("Ошибка отправки рекорда. Проверьте соединение.");
+    });
 }
 
-// Загрузка ТОП игроков из Google Таблицы
+// ✅ ЗАГРУЗКА ТОП ИГРОКОВ (ТОЛЬКО ПО ВЫЗОВУ)
 function loadLeaderboard() {
-    // Вставили ваш точный номер листа с ответами формы
-    const gidNumber = "1946799392"; 
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL === "ВАШ_URL_ВЕБ_ПРИЛОЖЕНИЯ") {
+        document.getElementById('leader-list').innerHTML = "<li>⚠️ Настройте APPS_SCRIPT_URL</li>";
+        console.error("Пожалуйста, настройте APPS_SCRIPT_URL в коде");
+        return;
+    }
+
+    console.log("Загрузка данных из:", APPS_SCRIPT_URL);
     
-    // Собираем правильную прямую ссылку на нужный лист
-    const url = "https://google.com" + gidNumber;
+    // Показываем индикатор загрузки
+    document.getElementById('leader-list').innerHTML = "<li>⏳ Обновление...</li>";
     
-    fetch(url)
-    .then(res => res.text())
+    fetch(APPS_SCRIPT_URL, {
+        method: 'GET',
+        mode: 'cors'
+    })
+    .then(response => {
+        console.log("Ответ получен, статус:", response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP ошибка! статус: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
-        // Очищаем ответ Google от лишнего текста, преобразуя в чистый JSON
-        const json = JSON.parse(data.substring(47, data.length - 2));
-        const rows = json.table.rows;
-        
-        let players = [];
-        rows.forEach(row => {
-            // Проверяем, что в строке есть данные и их хватает (минимум 3 колонки: время, имя, очки)
-            if (row && row.c && row.c.length >= 3) { 
-                const nameCell = row.c[1];  // Колонка B (Имя)
-                const scoreCell = row.c[2]; // Колонка C (Очки)
-                
-                if (nameCell && scoreCell && nameCell.v !== null && scoreCell.v !== null) {
-                    players.push({
-                        name: nameCell.v.toString(),
-                        score: parseInt(scoreCell.v) || 0
-                    });
-                }
-            }
-        });
-
-        // Сортировка по очкам от большего к меньшему
-        players.sort((a, b) => b.score - a.score);
-
-        // Отрисовка ТОП-10 на экран
+        console.log("Данные получены:", data);
         const listHtml = document.getElementById('leader-list');
         listHtml.innerHTML = "";
         
-        if (players.length === 0) {
-            listHtml.innerHTML = "<li>Таблица пуста</li>";
+        if (!data || data.length === 0) {
+            listHtml.innerHTML = "<li>📭 Таблица пуста</li>";
         } else {
-            players.slice(0, 10).forEach(p => {
-                listHtml.innerHTML += `<li>${p.name} <span class="score-val">${p.score}</span></li>`;
+            const topPlayers = data.slice(0, 10);
+            topPlayers.forEach((p, index) => {
+                const medal = index === 0 ? "🏆 " : index === 1 ? "🥈 " : index === 2 ? "🥉 " : "";
+                listHtml.innerHTML += `<li>${medal}${p.name} <span class="score-val">${p.score}</span></li>`;
             });
         }
-    }).catch(err => {
-        document.getElementById('leader-list').innerHTML = "<li>Ошибка загрузки топа</li>";
-        console.error(err);
+    })
+    .catch(err => {
+        console.error("Ошибка загрузки таблицы:", err);
+        document.getElementById('leader-list').innerHTML = `<li>❌ Ошибка: ${err.message}</li>`;
     });
 }
 
