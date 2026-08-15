@@ -241,7 +241,7 @@ function sendRecord(name, score) {
 // Загрузка ТОП игроков из Google Таблицы
 function loadLeaderboard() {
     // ИСПРАВЛЕНО: Теперь адрес Google Таблиц указан полностью и правильно!
-    const url = "https://google.com/" + GOOGLE_SHEET_ID + "/gviz/tq?tqx=out:json&gid=0";
+    const url = "https://google.com" + GOOGLE_SHEET_ID + "/gviz/tq?tqx=out:json&gid=0";
     
     fetch(url)
     .then(res => res.text())
